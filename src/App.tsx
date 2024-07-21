@@ -37,7 +37,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Auth } from "./Auth";
 import { history } from "./history";
-import { QueryRowFormat } from "@itwin/core-common";
+import { Visualization } from "./Visualization"; // Import the Visualization class
 
 const App: React.FC = () => {
   const [iModelId, setIModelId] = useState(process.env.IMJS_IMODEL_ID);
@@ -129,57 +129,11 @@ const App: React.FC = () => {
     MeasurementActionToolbar.setDefaultActionProvider();
   }, []);
 
-  const onIModelConnected = (_imodel: IModelConnection) => {
+  const onIModelConnected = (imodel: IModelConnection) => {
     console.log("Hello World");
 
     IModelApp.viewManager.onViewOpen.addOnce(async (vp: ScreenViewport) => {
-      
-
-      const cToHide: string[] = [
-        "'Geom_Baseline'",
-        "'TC_Aggregate'",
-        "'TC_Grass'",
-        "'TC_Rail Ballast'",
-        "'TC_Rail Conc Sleeper'",
-        "'TC_Rail Subballast'",
-        "'TL_Rail Subballast'",
-        "'TL_Rail Ballast'",
-        "'Default'",
-        "'S-PILE-CONC'",
-        "'S-WALL-CONC'",
-        "'A-GLAZ'",
-        "'A-GLAZ-CLER'",
-        "'A-HRAL-MWRK'",
-        "'ARC01'",
-        "'S-BEAM'",
-        "'S-BEAM-STEL-PRI'",
-        "'S-COLS'",
-        "'S-JOIS-ENVL'",
-        "'S-SLAB-CONC'",
-        "'C-RAIL-EQPM'",
-        "'A-WALL-BLOC'",
-        "'A-WALL-LINE'",
-        "'A-WALL-METL'",
-        "'A-WALL-STUD'",
-        "'A-WALL-TPAR'",
-        "'S-COLS-FRAM'",
-        "'S-SLAB-CONC'",
-        "'S-BEAM'",
-        "'S-BEAM-CONC'",
-        "'S-COLS-CONC'",
-        "'A-CLNG-TILE'",
-      ];
-      const query = `SELECT ECInstanceId FROM Bis.Category 
-   WHERE CodeValue IN (${cToHide.toString()})`;
-
-      const result = _imodel.query(query, undefined, { rowFormat: QueryRowFormat.UseJsPropertyNames });
-      const categoryIds = [];
-
-      for await (const row of result) 
-        categoryIds.push(row.id);
-
-      console.log(categoryIds);
-      vp.changeCategoryDisplay(categoryIds, false);
+      await Visualization.hideHouseExterior(vp, imodel); // Call the new method
     });
   };
 
