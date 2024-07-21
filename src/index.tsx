@@ -6,7 +6,7 @@
 import "./index.scss";
 
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from 'react-dom/client';
 
 import App from "./App";
 import { Auth } from "./Auth";
@@ -41,12 +41,14 @@ const redirectUrl = new URL(process.env.IMJS_AUTH_CLIENT_REDIRECT_URI);
 if (redirectUrl.pathname === window.location.pathname) {
   Auth.handleSigninCallback().catch(console.error);
 } else {
-  ReactDOM.render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>,
-    document.getElementById("root")
-  );
+const container = document.getElementById('root');
+const root = createRoot(container!);
+
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
 }
 
 // If you want your app to work offline and load faster, you can change

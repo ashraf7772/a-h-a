@@ -5,7 +5,12 @@
 .viewer-container {
   height: 100vh;
 
-  .signin-content {
+
+.signin-content {
     width: 400px;
   }
+.iui-root.iui-root-background {
+  height: 100vh;
+}
+  
 }
