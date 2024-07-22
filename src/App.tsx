@@ -37,7 +37,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Auth } from "./Auth";
 import { history } from "./history";
-import { Visualization } from "./Visualization"; // Import the Visualization class
+import { Visualization } from "./Visualization"; 
+import { DisplayStyleSettingsProps } from "@itwin/core-common";
 
 const App: React.FC = () => {
   const [iModelId, setIModelId] = useState(process.env.IMJS_IMODEL_ID);
@@ -133,7 +134,17 @@ const App: React.FC = () => {
     console.log("Hello World");
 
     IModelApp.viewManager.onViewOpen.addOnce(async (vp: ScreenViewport) => {
-      await Visualization.hideHouseExterior(vp, imodel); // Call the new method
+
+      const viewStyle: DisplayStyleSettingsProps = {
+        viewflags: {
+          visEdges: false,
+          shadows: false
+        }
+      } 
+
+      vp.overrideDisplayStyle(viewStyle);
+
+      await Visualization.hideHouseExterior(vp, imodel); 
     });
   };
 
