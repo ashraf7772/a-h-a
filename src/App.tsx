@@ -39,6 +39,7 @@ import { Auth } from "./Auth";
 import { history } from "./history";
 import { Visualization } from "./Visualization"; 
 import { DisplayStyleSettingsProps } from "@itwin/core-common";
+import { PassengerDataApi } from "./PassengerDataAPI";
 
 const App: React.FC = () => {
   const [iModelId, setIModelId] = useState(process.env.IMJS_IMODEL_ID);
@@ -144,6 +145,7 @@ const App: React.FC = () => {
 
       vp.overrideDisplayStyle(viewStyle);
 
+      console.log(await PassengerDataApi.getData());
       await Visualization.hideHouseExterior(vp, imodel); 
     });
   };
