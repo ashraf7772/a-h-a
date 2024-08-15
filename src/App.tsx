@@ -1,8 +1,3 @@
-/*---------------------------------------------------------------------------------------------
- * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See LICENSE.md in the project root for license terms and full copyright notice.
- *--------------------------------------------------------------------------------------------*/
-
 import "./App.scss";
 
 import type { ScreenViewport, IModelConnection } from "@itwin/core-frontend";
@@ -37,9 +32,10 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Auth } from "./Auth";
 import { history } from "./history";
-import { Visualization } from "./Visualization"; 
+import { Visualization } from "./Visualization";
 import { DisplayStyleSettingsProps } from "@itwin/core-common";
 import { PassengerDataApi } from "./PassengerDataAPI";
+import { SmartDeviceDecorator } from "./components/decorators/SmartDeviceDecorator";
 
 const App: React.FC = () => {
   const [iModelId, setIModelId] = useState(process.env.IMJS_IMODEL_ID);
@@ -133,20 +129,57 @@ const App: React.FC = () => {
 
   const onIModelConnected = (imodel: IModelConnection) => {
     console.log("Hello World");
-
+  
     IModelApp.viewManager.onViewOpen.addOnce(async (vp: ScreenViewport) => {
-
       const viewStyle: DisplayStyleSettingsProps = {
         viewflags: {
           visEdges: false,
-          shadows: false
-        }
-      } 
-
+          shadows: false,
+        },
+      };
+  
       vp.overrideDisplayStyle(viewStyle);
-
+  
       console.log(await PassengerDataApi.getData());
-      await Visualization.hideHouseExterior(vp, imodel); 
+  
+      await Visualization.hideHouseExterior(vp, imodel);
+      IModelApp.viewManager.addDecorator(new SmartDeviceDecorator(vp));
+  
+      // List schemas function definition
+      async function listSchemas() {
+        try {
+          const query = `
+            SELECT DISTINCT Name
+            FROM meta.ECSchemaDef
+          `;
+          const schemas = imodel.query(query);
+          
+          // Create an array to hold schema names
+          const schemaList: string[] = [];
+      
+          // Iterate through the results from the AsyncGenerator
+          for await (const row of schemas) {
+            // Log the entire row to inspect its structure
+            console.log("Row:", row);
+            
+            // Extract and push the schema name if available
+            // Assuming row is an array with a single element (the schema name)
+            if (Array.isArray(row) && row.length > 0) {
+              schemaList.push(row[0]);
+            } else {
+              schemaList.push("Unknown");
+            }
+          }
+      
+          console.log("Available Schemas:", schemaList);
+        } catch (error) {
+          console.error("Error querying schemas:", error);
+        }
+      }
+      
+  
+      // Call the listSchemas function
+      await listSchemas();
     });
   };
 
