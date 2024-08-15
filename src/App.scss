@@ -12,5 +12,16 @@
 .iui-root.iui-root-background {
   height: 100vh;
 }
+
+.smart-table {
+  font-size: 12px;
+  width: 100%;
+
+td {
+    border: 1px solid black;
+    text-align: left;
+    padding: 8px;
+  }
+}
   
 }
