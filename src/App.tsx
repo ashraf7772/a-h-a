@@ -1,6 +1,6 @@
-import "./App.scss";
-
-import type { ScreenViewport, IModelConnection } from "@itwin/core-frontend";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
+import { ScreenViewport, IModelConnection, Marker, MarkerSet, Cluster, Decorator, DecorateContext } from "@itwin/core-frontend";
+import { Point3d } from "@itwin/core-geometry";
 import { FitViewTool, IModelApp, StandardViewId } from "@itwin/core-frontend";
 import { FillCentered } from "@itwin/core-react";
 import { ProgressLinear, ThemeProvider } from "@itwin/itwinui-react";
@@ -28,21 +28,52 @@ import {
   ViewerPerformance,
   ViewerStatusbarItemsProvider,
 } from "@itwin/web-viewer-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Auth } from "./Auth";
 import { history } from "./history";
 import { Visualization } from "./Visualization";
 import { DisplayStyleSettingsProps } from "@itwin/core-common";
 import { PassengerDataApi } from "./PassengerDataAPI";
-import { SmartDeviceDecorator } from "./components/decorators/SmartDeviceDecorator";
+import "./App.scss";
+
+class MyMarkerSet extends MarkerSet<Marker> implements Decorator {
+  constructor(viewport: ScreenViewport) {
+    super(viewport);
+  }
+
+  protected getClusterMarker(cluster: Cluster<Marker>): Marker {
+    if (cluster.markers.length > 0) {
+      return cluster.markers[0];
+    }
+
+    if (!this.viewport) {
+      throw new Error("Viewport is undefined. Cannot create a Marker.");
+    }
+
+    const clusterLocation = cluster.getClusterLocation();
+    const clusterPoint = new Point3d(clusterLocation.x, clusterLocation.y, clusterLocation.z);
+    const defaultMarker = new Marker(clusterPoint, { x: 32, y: 32 });
+    defaultMarker.label = "Cluster";
+    return defaultMarker;
+  }
+
+  addMarker(marker: Marker): void {
+    this.markers.add(marker); // Utilizing the inherited `markers` Set property
+  }
+
+  // Corrected method using DecorateContext
+  decorate(context: DecorateContext): void {
+    for (const marker of this.markers) {
+      marker.addDecoration(context);
+    }
+  }
+}
+
 
 const App: React.FC = () => {
   const [iModelId, setIModelId] = useState(process.env.IMJS_IMODEL_ID);
   const [iTwinId, setITwinId] = useState(process.env.IMJS_ITWIN_ID);
-  const [changesetId, setChangesetId] = useState(
-    process.env.IMJS_AUTH_CLIENT_CHANGESET_ID
-  );
+  const [changesetId, setChangesetId] = useState(process.env.IMJS_AUTH_CLIENT_CHANGESET_ID);
 
   const accessToken = useAccessToken();
 
@@ -86,12 +117,12 @@ const App: React.FC = () => {
     history.push(url);
   }, [iTwinId, iModelId, changesetId]);
 
-  const viewConfiguration = useCallback((viewPort: ScreenViewport) => {
+  const viewConfiguration = useCallback((viewport: ScreenViewport) => {
     const tileTreesLoaded = () => {
       return new Promise((resolve, reject) => {
         const start = new Date();
         const intvl = setInterval(() => {
-          if (viewPort.areAllTileTreesLoaded) {
+          if (viewport.areAllTileTreesLoaded) {
             ViewerPerformance.addMark("TilesLoaded");
             ViewerPerformance.addMeasure(
               "TileTreesLoaded",
@@ -110,8 +141,8 @@ const App: React.FC = () => {
     };
 
     tileTreesLoaded().finally(() => {
-      void IModelApp.tools.run(FitViewTool.toolId, viewPort, true, false);
-      viewPort.view.setStandardRotation(StandardViewId.Iso);
+      void IModelApp.tools.run(FitViewTool.toolId, viewport, true, false);
+      viewport.view.setStandardRotation(StandardViewId.Iso);
     });
   }, []);
 
@@ -127,9 +158,24 @@ const App: React.FC = () => {
     MeasurementActionToolbar.setDefaultActionProvider();
   }, []);
 
+  const addPlaneMarker = (viewport: ScreenViewport) => {
+    const markers = new MyMarkerSet(viewport);
+    const planeCoordinates = new Point3d(-4.67, -3.06, 10.07);
+
+    const marker = new Marker(planeCoordinates, { x: 32, y: 32 });
+    marker.label = "Plane";
+    marker.setScaleFactor({ low: 1.0, high: 1.0 });
+    marker.imageOffset = { x: 0, y: 0 };
+    marker.imageSize = { x: 32, y: 32 };
+    marker.labelOffset = { x: 0, y: -20 };
+    marker.visible = true;
+
+    markers.addMarker(marker);
+
+    IModelApp.viewManager.addDecorator(markers);
+  };
+
   const onIModelConnected = (imodel: IModelConnection) => {
-    console.log("Hello World");
-  
     IModelApp.viewManager.onViewOpen.addOnce(async (vp: ScreenViewport) => {
       const viewStyle: DisplayStyleSettingsProps = {
         viewflags: {
@@ -137,49 +183,12 @@ const App: React.FC = () => {
           shadows: false,
         },
       };
-  
+
       vp.overrideDisplayStyle(viewStyle);
-  
       console.log(await PassengerDataApi.getData());
-  
       await Visualization.hideHouseExterior(vp, imodel);
-      IModelApp.viewManager.addDecorator(new SmartDeviceDecorator(vp));
-  
-      // List schemas function definition
-      async function listSchemas() {
-        try {
-          const query = `
-            SELECT DISTINCT Name
-            FROM meta.ECSchemaDef
-          `;
-          const schemas = imodel.query(query);
-          
-          // Create an array to hold schema names
-          const schemaList: string[] = [];
-      
-          // Iterate through the results from the AsyncGenerator
-          for await (const row of schemas) {
-            // Log the entire row to inspect its structure
-            console.log("Row:", row);
-            
-            // Extract and push the schema name if available
-            // Assuming row is an array with a single element (the schema name)
-            if (Array.isArray(row) && row.length > 0) {
-              schemaList.push(row[0]);
-            } else {
-              schemaList.push("Unknown");
-            }
-          }
-      
-          console.log("Available Schemas:", schemaList);
-        } catch (error) {
-          console.error("Error querying schemas:", error);
-        }
-      }
-      
-  
-      // Call the listSchemas function
-      await listSchemas();
+
+      addPlaneMarker(vp);
     });
   };
 
