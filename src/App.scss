@@ -47,3 +47,30 @@
   border: none;
   border-radius: 4px;
 }
+
+.bag-scan-popup {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  padding: 10px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  text-align: center;
+}
+
+.bag-scan-popup h3 {
+  margin: 0 0 10px 0;
+  color: black;
+}
+
+.bag-scan-popup button {
+  padding: 10px 20px;
+  cursor: pointer;
+  background-color: #0db439; // Green button
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1em;
+}

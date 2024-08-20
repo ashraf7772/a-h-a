@@ -35,6 +35,7 @@ import { Visualization } from "./Visualization";
 import { DisplayStyleSettingsProps } from "@itwin/core-common";
 import "./App.scss";
 
+// TimerPopup component (already correct in your code)
 interface TimerPopupProps {
   startTime: number; // Start time in seconds
   onClose: () => void;
@@ -66,13 +67,24 @@ const TimerPopup: React.FC<TimerPopupProps> = ({ startTime, onClose }) => {
 
   return (
     <div className="timer-popup">
-      <h3>Remaining time until flight</h3>  {/* Added this line */}
+      <h3>Remaining time until flight</h3>
       <p>{formatTime(timeLeft)}</p>
       <button onClick={onClose}>Close</button>
     </div>
   );
 };
 
+// BagScanPopup component
+const BagScanPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  return (
+    <div className="bag-scan-popup">
+      <h3>Baggage Area</h3>
+      <button onClick={onClose}>Simulate Bag Scan</button>
+    </div>
+  );
+};
+
+// MyMarkerSet class implementation (already correct in your code)
 class MyMarkerSet extends MarkerSet<Marker> implements Decorator {
   constructor(viewport: ScreenViewport) {
     super(viewport);
@@ -110,6 +122,7 @@ const App: React.FC = () => {
   const [iTwinId, setITwinId] = useState(process.env.IMJS_ITWIN_ID);
   const [changesetId, setChangesetId] = useState(process.env.IMJS_AUTH_CLIENT_CHANGESET_ID);
   const [showPopup, setShowPopup] = useState(false);
+  const [showBagScanPopup, setShowBagScanPopup] = useState(false); // State for BagScanPopup
 
   const accessToken = useAccessToken();
   const authClient = Auth.getClient();
@@ -197,11 +210,11 @@ const App: React.FC = () => {
     const markers = new MyMarkerSet(viewport);
     const planeCoordinates = new Point3d(-4.67, -3.06, 10.07);
 
-    const marker = new Marker(planeCoordinates, { x: 32, y: 32 });
+    const marker = new Marker(planeCoordinates, { x: 70, y: 70 });
     marker.label = "Plane";
     marker.setScaleFactor({ low: 1.0, high: 1.0 });
     marker.imageOffset = { x: 0, y: 0 };
-    marker.imageSize = { x: 32, y: 32 };
+    marker.imageSize = { x: 70, y: 70 };
     marker.labelOffset = { x: 0, y: -20 };
     marker.visible = true;
 
@@ -233,21 +246,40 @@ const App: React.FC = () => {
     IModelApp.viewManager.addDecorator(markers);
   };
 
-  const addBaggageAreaMarker = (viewport: ScreenViewport) => {
+  const addBaggageAreaMarker = (viewport: ScreenViewport, setShowBagScanPopup: React.Dispatch<React.SetStateAction<boolean>>) => {
     const markers = new MyMarkerSet(viewport);
     const baggageAreaCoordinates = new Point3d(65, 35, 0);
-
-    const marker = new Marker(baggageAreaCoordinates, { x: 32, y: 32 });
+    
+    const marker = new Marker(baggageAreaCoordinates, { x: 70, y: 70 });
     marker.label = "Baggage Area";
     marker.setScaleFactor({ low: 1.0, high: 1.0 });
     marker.imageOffset = { x: 0, y: 0 };
-    marker.imageSize = { x: 32, y: 32 };
+    marker.imageSize = { x: 70, y: 70 };
     marker.labelOffset = { x: 0, y: -20 };
     marker.visible = true;
-
+  
+    // Add event handlers for cursor changes
+    marker.onMouseEnter = () => {
+      document.body.style.cursor = "pointer"; // Change cursor to pointer
+    };
+  
+    marker.onMouseLeave = () => {
+      document.body.style.cursor = "default"; // Reset cursor to default
+    };
+  
+    marker.onMouseButton = (ev) => {
+      if (ev.button === 0) { // Left mouse button
+        console.log("Baggage Area marker clicked");
+        setShowBagScanPopup(true);
+        return true; // Event handled
+      }
+      return false; // Event not handled
+    };
+  
     markers.addMarker(marker);
     IModelApp.viewManager.addDecorator(markers);
   };
+  
 
   const onIModelConnected = (imodel: IModelConnection) => {
     IModelApp.viewManager.onViewOpen.addOnce(async (vp: ScreenViewport) => {
@@ -259,12 +291,12 @@ const App: React.FC = () => {
       };
 
       vp.overrideDisplayStyle(viewStyle);
-      //console.log(await PassengerDataApi.getData());
+      
       await Visualization.hideHouseExterior(vp, imodel);
 
       addPlaneMarker(vp, setShowPopup); // Pass setShowPopup to handle the click event
       addFireSafetyMarker(vp);
-      addBaggageAreaMarker(vp);
+      addBaggageAreaMarker(vp, setShowBagScanPopup);
     });
   };
 
@@ -287,43 +319,47 @@ const App: React.FC = () => {
           enablePerformanceMonitors={true}
           onIModelAppInit={onIModelAppInit}
           onIModelConnected={onIModelConnected}
-          uiProviders={[
-            new ViewerNavigationToolsProvider(),
-            new ViewerContentToolsProvider({
-              vertical: {
-                measureGroup: false,
-              },
-            }),
-            new ViewerStatusbarItemsProvider(),
-            new TreeWidgetUiItemsProvider(),
-            new PropertyGridUiItemsProvider({
-              propertyGridProps: {
-                autoExpandChildCategories: true,
-                ancestorsNavigationControls: (props) => (
-                  <AncestorsNavigationControls {...props} />
-                ),
-                contextMenuItems: [
-                  (props) => <CopyPropertyTextContextMenuItem {...props} />,
-                ],
-                settingsMenuItems: [
-                  (props) => (
-                    <ShowHideNullValuesSettingsMenuItem
-                      {...props}
-                      persist={true}
-                    />
-                  ),
-                ],
-              },
-            }),
-            new MeasureToolsUiItemsProvider(),
-          ]}
-        />
-        {showPopup && (
-          <TimerPopup
-            startTime={10800} // 3 hours in seconds
-            onClose={() => setShowPopup(false)}
+uiProviders={[
+  new ViewerNavigationToolsProvider(),
+  new ViewerContentToolsProvider({
+    vertical: {
+      measureGroup: false,
+    },
+  }),
+  new ViewerStatusbarItemsProvider(),
+  new TreeWidgetUiItemsProvider(),
+  new PropertyGridUiItemsProvider({
+    propertyGridProps: {
+      autoExpandChildCategories: true,
+      ancestorsNavigationControls: (props) => (
+        <AncestorsNavigationControls {...props} />
+      ),
+      contextMenuItems: [
+        (props) => <CopyPropertyTextContextMenuItem {...props} />,
+      ],
+      settingsMenuItems: [
+        (props) => (
+          <ShowHideNullValuesSettingsMenuItem
+            {...props}
+            persist={true}
           />
-        )}
+        ),
+      ],
+    },
+  }),  // Make sure this closing brace has a comma
+  new MeasureToolsUiItemsProvider(),  // Correctly separate items in the array
+]}
+/>
+{showPopup && (
+  <TimerPopup
+    startTime={10800} // 3 hours in seconds
+    onClose={() => setShowPopup(false)}
+  />
+)}
+{showBagScanPopup && (
+  <BagScanPopup onClose={() => setShowBagScanPopup(false)} />
+)}
+
       </ThemeProvider>
     </div>
   );
