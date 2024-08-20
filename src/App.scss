@@ -14,3 +14,28 @@
 .iui-root.iui-root-background {
   height: 100vh;
 }
+
+.timer-popup {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  padding: 10px;
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+}
+
+.timer-popup h3 {
+  margin: 0 0 10px 0;
+}
+
+.timer-popup p {
+  font-size: 1.5em;
+  margin: 0 0 10px 0;
+}
+
+.timer-popup button {
+  padding: 5px 10px;
+  cursor: pointer;
+}
