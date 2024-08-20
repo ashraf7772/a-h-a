@@ -66,7 +66,7 @@ const TimerPopup: React.FC<TimerPopupProps> = ({ startTime, onClose }) => {
 
   return (
     <div className="timer-popup">
-      <h3>Timer</h3>
+      <h3>Remaining time until flight</h3>  {/* Added this line */}
       <p>{formatTime(timeLeft)}</p>
       <button onClick={onClose}>Close</button>
     </div>
