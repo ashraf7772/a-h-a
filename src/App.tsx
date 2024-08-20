@@ -175,6 +175,44 @@ const App: React.FC = () => {
     IModelApp.viewManager.addDecorator(markers);
   };
 
+  const addFireSafetyMarker = (viewport: ScreenViewport) => {
+    const markers = new MyMarkerSet(viewport);
+    const fireSafetyCoordinates = new Point3d(70, 0, 0);
+  
+    const marker = new Marker(fireSafetyCoordinates, { x: 32, y: 32 });
+    marker.label = "Fire Safety";
+    marker.setScaleFactor({ low: 1.0, high: 1.0 });
+    marker.imageOffset = { x: 0, y: 0 };
+    marker.imageSize = { x: 32, y: 32 };
+    marker.labelOffset = { x: 0, y: -20 };
+    marker.visible = true;
+  
+    markers.addMarker(marker);
+  
+    // Add the marker set as a decorator to the view manager
+    IModelApp.viewManager.addDecorator(markers);
+  };
+
+  const addBaggageAreaMarker = (viewport: ScreenViewport) => {
+    const markers = new MyMarkerSet(viewport);
+    const baggageAreaCoordinates = new Point3d(65, 35, 0);
+  
+    const marker = new Marker(baggageAreaCoordinates, { x: 32, y: 32 });
+    marker.label = "Baggage Area";
+    marker.setScaleFactor({ low: 1.0, high: 1.0 });
+    marker.imageOffset = { x: 0, y: 0 };
+    marker.imageSize = { x: 32, y: 32 };
+    marker.labelOffset = { x: 0, y: -20 };
+    marker.visible = true;
+  
+    markers.addMarker(marker);
+  
+    // Add the marker set as a decorator to the view manager
+    IModelApp.viewManager.addDecorator(markers);
+  };
+  
+  
+
   const onIModelConnected = (imodel: IModelConnection) => {
     IModelApp.viewManager.onViewOpen.addOnce(async (vp: ScreenViewport) => {
       const viewStyle: DisplayStyleSettingsProps = {
@@ -189,6 +227,8 @@ const App: React.FC = () => {
       await Visualization.hideHouseExterior(vp, imodel);
 
       addPlaneMarker(vp);
+      addFireSafetyMarker(vp);  //fire safety marker
+      addBaggageAreaMarker(vp);  // New baggage area marker
     });
   };
 
