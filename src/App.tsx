@@ -118,6 +118,18 @@ class MyMarkerSet extends MarkerSet<Marker> implements Decorator {
 }
 
 const App: React.FC = () => {
+
+  const playAlarmSound = () => {
+    const alarmSound = new Audio('/sounds/mixkit-classic-alarm-995.wav'); // Path to your .wav file
+    alarmSound.play();  // Play the sound
+  };
+
+  const triggerFireAlarm = () => {
+    playAlarmSound();  // Play the alarm sound
+    alert("Fire alarm triggered! Evacuate the area immediately.");  // Additional action
+  };
+
+
   const [iModelId, setIModelId] = useState(process.env.IMJS_IMODEL_ID);
   const [iTwinId, setITwinId] = useState(process.env.IMJS_ITWIN_ID);
   const [changesetId, setChangesetId] = useState(process.env.IMJS_AUTH_CLIENT_CHANGESET_ID);
@@ -241,6 +253,15 @@ const App: React.FC = () => {
     marker.imageSize = { x: 32, y: 32 };
     marker.labelOffset = { x: 0, y: -20 };
     marker.visible = true;
+
+    marker.onMouseButton = (ev) => {
+      if (ev.button === 0) { // Left mouse button
+        triggerFireAlarm();  // Trigger the fire alarm actions
+        return true; // Event handled
+      }
+      return false; // Event not handled
+    };
+
 
     markers.addMarker(marker);
     IModelApp.viewManager.addDecorator(markers);
